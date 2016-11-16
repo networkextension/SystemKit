@@ -25,7 +25,12 @@
 // THE SOFTWARE.
 
 import Darwin
+#if os(iOS)
+
+#elseif os(OSX)
 import IOKit.pwr_mgt
+#endif
+
 import Foundation
 
 //------------------------------------------------------------------------------
@@ -173,33 +178,106 @@ public struct System {
     
     /// Get the model name of this machine. Same as "sysctl hw.model"
     public static func modelName() -> String {
-        let name: String
-        var mib  = [CTL_HW, HW_MODEL]
-
-        // Max model name size not defined by sysctl. Instead we use io_name_t
-        // via I/O Kit which can also get the model name
-        var size = MemoryLayout<io_name_t>.size
-
-        let ptr    = UnsafeMutablePointer<io_name_t>.allocate(capacity: 1)
-        let result = sysctl(&mib, u_int(mib.count), ptr, &size, nil, 0)
-
-
-        if result == 0 { name = String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self)) }
-        else           { name = String() }
-
-
-        ptr.deallocate(capacity: 1)
-
-        #if DEBUG
-            if result != 0 {
-                print("ERROR - \(#file):\(#function) - errno = "
+        #if os(iOS)
+            return System.platformString()
+        #elseif os(OSX)
+            let name: String
+            var mib  = [CTL_HW, HW_MODEL]
+            
+            // Max model name size not defined by sysctl. Instead we use io_name_t
+            // via I/O Kit which can also get the model name
+            var size = MemoryLayout<io_name_t>.size
+            
+            let ptr    = UnsafeMutablePointer<io_name_t>.allocate(capacity: 1)
+            let result = sysctl(&mib, u_int(mib.count), ptr, &size, nil, 0)
+            
+            
+            if result == 0 { name = String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self)) }
+            else           { name = String() }
+            
+            
+            ptr.deallocate(capacity: 1)
+            
+            #if DEBUG
+                if result != 0 {
+                    print("ERROR - \(#file):\(#function) - errno = "
                         + "\(result)")
-            }
+                }
+            #endif
+            return name
         #endif
 
-        return name
     }
 
+    
+    static func platformString() -> String {
+        var size : Int = 0
+        sysctlbyname("hw.machine", nil, &size, nil, 0)
+        var machine = [CChar](repeating: 0, count: Int(size))
+        sysctlbyname("hw.machine", &machine, &size, nil, 0)
+        let platform : String = String(cString: machine)
+        
+        if platform == "iPhone1,1"    { return "iPhone 1G" }
+        if platform == "iPhone1,2"    { return "iPhone 3G" }
+        if platform == "iPhone2,1"    { return "iPhone 3GS" }
+        if platform == "iPhone3,1"    { return "iPhone 4 (GSM)" }
+        if platform == "iPhone3,3"    { return "iPhone 4 (CDMA)" }
+        if platform == "iPhone4,1"    { return "iPhone 4S" }
+        if platform == "iPhone5,1"    { return "iPhone 5 (GSM)" }
+        if platform == "iPhone5,2"    { return "iPhone 5 (GSM+CDMA)" }
+        if platform == "iPhone5,3"    { return "iPhone 5c (GSM)" }
+        if platform == "iPhone5,4"    { return "iPhone 5c (GSM+CDMA)" }
+        if platform == "iPhone6,1"    { return "iPhone 5s (GSM)" }
+        if platform == "iPhone6,2"    { return "iPhone 5s (GSM+CDMA)" }
+        if platform == "iPhone7,1"    { return "iPhone 6 Plus" }
+        if platform == "iPhone7,2"    { return "iPhone 6" }
+        if platform == "iPhone8,2"    { return "iPhone 6s Plus" }
+        if platform == "iPhone8,1"    { return "iPhone 6s" }
+        if platform == "iPhone8,4"    { return "iPhone SE" }
+        if platform == "iPhone9,2"    { return "iPhone 7 Plus" }
+        if platform == "iPhone9,1"    { return "iPhone 7" }
+        if platform == "iPhone9,3"    { return "iPhone 7" }
+        if platform == "iPhone9,4"    { return "iPhone 7 Plus" }
+        if platform == "iPod1,1"      { return "iPod Touch 1G" }
+        if platform == "iPod2,1"      { return "iPod Touch 2G" }
+        if platform == "iPod3,1"      { return "iPod Touch 3G" }
+        if platform == "iPod4,1"      { return "iPod Touch 4G" }
+        if platform == "iPod5,1"      { return "iPod Touch 5G" }
+        if platform == "iPad1,1"      { return "iPad" }
+        if platform == "iPad2,1"      { return "iPad 2 (WiFi)" }
+        if platform == "iPad2,2"      { return "iPad 2 (GSM)" }
+        if platform == "iPad2,3"      { return "iPad 2 (CDMA)" }
+        if platform == "iPad2,4"      { return "iPad 2 (WiFi)" }
+        if platform == "iPad2,5"      { return "iPad Mini (WiFi)" }
+        if platform == "iPad2,6"      { return "iPad Mini (GSM)" }
+        if platform == "iPad2,7"      { return "iPad Mini (GSM+CDMA)" }
+        if platform == "iPad3,1"      { return "iPad 3 (WiFi)" }
+        if platform == "iPad3,2"      { return "iPad 3 (GSM+CDMA)" }
+        if platform == "iPad3,3"      { return "iPad 3 (GSM)" }
+        if platform == "iPad3,4"      { return "iPad 4 (WiFi)" }
+        if platform == "iPad3,5"      { return "iPad 4 (GSM)" }
+        if platform == "iPad3,6"      { return "iPad 4 (GSM+CDMA)" }
+        if platform == "iPad4,1"      { return "iPad Air (WiFi)" }
+        if platform == "iPad4,2"      { return "iPad Air (GSM)" }
+        if platform == "iPad4,3"      { return "iPad Air (LTE)" }
+        if platform == "iPad4,4"      { return "iPad Mini 2 (WiFi)" }
+        if platform == "iPad4,5"      { return "iPad Mini 2 (GSM)" }
+        if platform == "iPad4,6"      { return "iPad Mini 2 (LTE)" }
+        if platform == "iPad4,7"      { return "iPad Mini 3 (WiFi)" }
+        if platform == "iPad4,8"      { return "iPad Mini 3 (GSM)" }
+        if platform == "iPad4,9"      { return "iPad Mini 3 (LTE)" }
+        if platform == "iPad5,3"      { return "iPad Air 2 (WiFi)" }
+        if platform == "iPad5,4"      { return "iPad Air 2 (GSM)" }
+        
+        if platform == "iPad6,3"      { return "iPad Pro (WiFi)" }
+        if platform == "iPad6,4"      { return "iPad Pro (GSM)" }
+        if platform == "iPad6,7"      { return "iPad Pro 12.9 (WiFi)" }
+        if platform == "iPad6,8"      { return "iPad Pro 12.9 (GSM)" }
+        if platform == "i386"         { return "Simulator" }
+        if platform == "x86_64"       { return "Simulator" }
+        
+        return platform
+    }
 
     /**
     sysname       Name of the operating system implementation.
@@ -433,6 +511,7 @@ public struct System {
         var processorCount = -1
         var schedulerTime  = -1.0
 
+        #if os(OSX)
         let status = UnsafeMutablePointer<Unmanaged<CFDictionary>?>.allocate(capacity: 1)
 
         let result = IOPMCopyCPUPowerStatus(status)
@@ -462,7 +541,8 @@ public struct System {
         }
 
         status.deallocate(capacity: 1)
-
+                                                
+        #endif
         return (processorSpeed, processorCount, schedulerTime)
     }
 
@@ -470,28 +550,27 @@ public struct System {
     /// Get the thermal level of the system. As seen via 'pmset -g therm'
     public static func thermalLevel() -> System.ThermalLevel {
         var thermalLevel: UInt32 = 0
-
+        #if os(OSX)
         let result = IOPMGetThermalWarningLevel(&thermalLevel)
 
         if result == kIOReturnNotFound {
             return System.ThermalLevel.NotPublished
         }
-
+            
 
         #if DEBUG
             if result != kIOReturnSuccess {
                 print("ERROR - \(#file):\(#function) - kern_result_t = "
                         + "\(result)")
             }
+        
         #endif
-
-
-        // TODO: Thermal warning level values no longer available through
-        //       IOKit.pwr_mgt module as of Xcode 6.3 Beta 3. Not sure if thats
-        //       intended behaviour or a bug, will investigate. For now
-        //       hardcoding values, will move all power related calls to a
-        //       separate struct.
-        switch thermalLevel {
+            // TODO: Thermal warning level values no longer available through
+            //       IOKit.pwr_mgt module as of Xcode 6.3 Beta 3. Not sure if thats
+            //       intended behaviour or a bug, will investigate. For now
+            //       hardcoding values, will move all power related calls to a
+            //       separate struct.
+            switch thermalLevel {
             case 0:
                 // kIOPMThermalWarningLevelNormal
                 return System.ThermalLevel.Normal
@@ -503,7 +582,13 @@ public struct System {
                 return System.ThermalLevel.Crisis
             default:
                 return System.ThermalLevel.Unknown
-        }
+            }
+        #else
+            return System.ThermalLevel.Normal
+
+        #endif
+
+        
     }
 
 
