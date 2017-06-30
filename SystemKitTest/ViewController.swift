@@ -49,6 +49,12 @@ class ViewController: UIViewController {
         
         print("\n-- SYSTEM --")
         print("\tMODEL:           \(System.modelName())")
+        let names = System.uname()
+        print("\tSYSNAME:         \(names.sysname)")
+        print("\tNODENAME:        \(names.nodename)")
+        print("\tRELEASE:         \(names.release)")
+        print("\tVERSION:         \(names.version)")
+        print("\tMACHINE:         \(names.machine)")
     }
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

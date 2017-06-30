@@ -273,6 +273,14 @@ public struct System {
         if platform == "iPad6,4"      { return "iPad Pro (GSM)" }
         if platform == "iPad6,7"      { return "iPad Pro 12.9 (WiFi)" }
         if platform == "iPad6,8"      { return "iPad Pro 12.9 (GSM)" }
+        
+        
+        
+        if platform == "iPad7.1"      { return "iPad Pro 2 12.9 (WIFI)" }
+        if platform == "iPad7.2"      { return "iPad Pro 2 12.9 (GSM)" }
+        if platform == "iPad7,3"      { return "iPad Pro 10.5 (WIFI)" }
+        if platform == "iPad7,4"      { return "iPad Pro 10.5 (GSM)" }
+        
         if platform == "i386"         { return "Simulator" }
         if platform == "x86_64"       { return "Simulator" }
         
@@ -290,44 +298,51 @@ public struct System {
     */
     // FIXME: Two compiler bugs here. One has a workaround, the other requires
     //        a C wrapper function. See issue #18
-//    public static func uname() -> (sysname: String, nodename: String,
-//                                                     release: String,
-//                                                     version: String,
-//                                                     machine: String) {
-//        // Takes a generic pointer type because the type were dealing with
-//        // (from the utsname struct) is a huge tuple of Int8s (once bridged to
-//        // Swift), so it would be really messy to go that route (would have to
-//        // type it all out explicitly)
-//        func toString<T>(ptr: UnsafePointer<T>) -> String {
-//            return String.fromCString(UnsafePointer<CChar>(ptr))!
-//        }
-//
-//        let tuple: (String, String, String, String, String)
-//        var names  = utsname()
-//        let result = Foundation.uname(&names)
-//
-//        #if DEBUG
-//            if result != 0 {
-//                print("ERROR - \(__FILE__):\(__FUNCTION__) - errno = "
-//                        + "\(result)")
-//            }
-//        #endif
-//
-//        if result == 0 {
-//            let sysname  = withUnsafePointer(&names.sysname,  toString)
-//            let nodename = withUnsafePointer(&names.nodename, toString)
-//            let release  = withUnsafePointer(&names.release,  toString)
-//            let version  = withUnsafePointer(&names.version,  toString)
-//            let machine  = withUnsafePointer(&names.machine,  toString)
-//
-//            tuple = (sysname, nodename, release, version, machine)
-//        }
-//        else {
-//            tuple = ("", "", "", "", "")
-//        }
-//
-//        return tuple
-//    }
+    public static func uname() -> (sysname: String, nodename: String,
+                                                     release: String,
+                                                     version: String,
+                                                     machine: String) {
+        // Takes a generic pointer type because the type were dealing with
+        // (from the utsname struct) is a huge tuple of Int8s (once bridged to
+        // Swift), so it would be really messy to go that route (would have to
+        // type it all out explicitly)
+        func toString<T>(ptr: UnsafePointer<T>) -> String {
+            //return String.fromCString(UnsafePointer<CChar>(ptr))!
+//           
+            var result :String = ""
+            ptr.withMemoryRebound(to: CChar.self, capacity: 1) { (pptr)  in
+                result = String.init(validatingUTF8: pptr)!
+            }
+           //  result = String.init(validatingUTF8: ptr)!
+            return result
+        }
+
+        let tuple: (String, String, String, String, String)
+        var names  = utsname()
+        let result = Foundation.uname(&names)
+
+        #if DEBUG
+            if result != 0 {
+                print("ERROR - \(#file):\(#function) - errno = "
+                        + "\(result)")
+            }
+        #endif
+
+        if result == 0 {
+            let sysname  = withUnsafePointer(to: &names.sysname,  toString)
+            let nodename = withUnsafePointer(to: &names.nodename, toString)
+            let release  = withUnsafePointer(to: &names.release,  toString)
+            let version  = withUnsafePointer(to: &names.version,  toString)
+            let machine  = withUnsafePointer(to: &names.machine,  toString)
+
+            tuple = (sysname, nodename, release, version, machine)
+        }
+        else {
+            tuple = ("", "", "", "", "")
+        }
+
+        return tuple
+    }
 
 
     /// Number of physical cores on this machine.
